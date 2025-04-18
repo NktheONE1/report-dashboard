@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Report Card Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-4">Monthly Report Card Viewer</h1>
+        <div class="flex flex-wrap gap-4 mb-6">
+            <select id="monthFilter" class="border p-2 rounded w-full sm:w-auto">
+                <option value="">Select Month</option>
+            </select>
+            <select id="verticalFilter" class="border p-2 rounded w-full sm:w-auto">
+                <option value="">Select Vertical</option>
+            </select>
+            <select id="teamFilter" class="border p-2 rounded w-full sm:w-auto">
+                <option value="">Select Team</option>
+            </select>
+        </div>
+        <div id="reportTable" class="overflow-x-auto"></div>
+    </div>
+
+    <script>
+        const tableDiv = document.getElementById("reportTable");
+        const monthFilter = document.getElementById("monthFilter");
+        const verticalFilter = document.getElementById("verticalFilter");
+        const teamFilter = document.getElementById("teamFilter");
+        let fullData = [];
+
+        function renderTable(data) {
+            if (data.length === 0) {
+                tableDiv.innerHTML = "<p class='text-red-500'>No data available for selected filters.</p>";
+                return;
+            }
+
+            const headers = Object.keys(data[0]);
+            let html = "<table class='min-w-full table-auto border-collapse border border-gray-300'>";
+            html += "<thead><tr class='bg-gray-200'>";
+            headers.forEach(header => {
+                html += `<th class='border p-2'>${header}</th>`;
+            });
+            html += "</tr></thead><tbody>";
+
+            data.forEach(row => {
+                html += "<tr>";
+                headers.forEach(header => {
+                    html += `<td class='border p-2 text-center'>${row[header]}</td>`;
+                });
+                html += "</tr>";
+            });
+
+            html += "</tbody></table>";
+            tableDiv.innerHTML = html;
+        }
+
+        function applyFilters() {
+            const month = monthFilter.value;
+            const vertical = verticalFilter.value;
+            const team = teamFilter.value;
+
+            const filtered = fullData.filter(row =>
+                (month === "" || row.Month === month) &&
+                (vertical === "" || row.Vertical === vertical) &&
+                (team === "" || row.Team === team)
+            );
+
+            renderTable(filtered);
+        }
+
+        function populateFilters(data) {
+            const months = [...new Set(data.map(d => d.Month))];
+            const verticals = [...new Set(data.map(d => d.Vertical))];
+            const teams = [...new Set(data.map(d => d.Team))];
+
+            months.forEach(month => {
+                const opt = document.createElement("option");
+                opt.value = month;
+                opt.textContent = month;
+                monthFilter.appendChild(opt);
+            });
+
+            verticals.forEach(vertical => {
+                const opt = document.createElement("option");
+                opt.value = vertical;
+                opt.textContent = vertical;
+                verticalFilter.appendChild(opt);
+            });
+
+            teams.forEach(team => {
+                const opt = document.createElement("option");
+                opt.value = team;
+                opt.textContent = team;
+                teamFilter.appendChild(opt);
+            });
+        }
+
+        Papa.parse("master-data.csv", {
+            download: true,
+            header: true,
+            complete: function(results) {
+                fullData = results.data;
+                populateFilters(fullData);
+                renderTable(fullData);
+            }
+        });
+
+        monthFilter.addEventListener("change", applyFilters);
+        verticalFilter.addEventListener("change", applyFilters);
+        teamFilter.addEventListener("change", applyFilters);
+    </script>
+</body>
+</html>
